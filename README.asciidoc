@@ -1,0 +1,48 @@
+== Instructions
+
+=== prerequisits
+
+Installation of:
+
+* Wheezy
+* ROS_comm (http://wiki.ros.org/indigo/Installation/Debian)
+* Machinekit
+
+see also link:https://github.com/machinekit/machinekit/issues/689#issuecomment-164146410[this comment]
+
+=== Usage
+
+in a 1st terminal run
+```
+halrun -I ~/ros_catkin_ws/src/ros_hello_machinekit/halfile.hal
+```
+
+in a 2nd terminal rin
+```
+roscore
+```
+
+in a 3nd terminal run
+```
+rosrun ros_hello_machinekit hello_world_publisher.py
+```
+
+in a 4rd terminal run
+```
+rosrun ros_hello_machinekit hello_world_subscriber.py
+```
+
+return to the first terminal
+```
+show comp
+show pin
+```
+
+you'll notice the subscriber has the value of `0`. Thaty's because the pin `rospub-inside-HAL.value-in` is still `0`
+
+type:
+```
+net cosine siggen.0.cosine rospub-inside-HAL.value-in
+```
+
+see that the subscriber now gets the values of the `siggen.0.cosine` pin from `siggen`
