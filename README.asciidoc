@@ -16,18 +16,22 @@ in a 1st terminal run
 ```
 halrun -I ~/ros_catkin_ws/src/ros_hello_machinekit/halfile.hal
 ```
-
-in a 2nd terminal rin
+in a 2nd terminal run which can be used for viewing the publisher and subscriber making HAL pins
 ```
-roscore
+watch -n 0.2 "halcmd show pin"
 ```
 
 in a 3nd terminal run
 ```
+roscore
+```
+
+in a 4nd terminal run
+```
 rosrun ros_hello_machinekit hello_world_publisher.py
 ```
 
-in a 4rd terminal run
+in a 5rd terminal run
 ```
 rosrun ros_hello_machinekit hello_world_subscriber.py
 ```
@@ -45,4 +49,13 @@ type:
 net cosine siggen.0.cosine rospub-inside-HAL.value-in
 ```
 
-see that the subscriber now gets the values of the `siggen.0.cosine` pin from `siggen`
+- observe in terminal 4 that the publisher now gets the values of the `siggen.0.cosine` pin from `siggen`
+- observe in terminal 5 that the subscriber gets the value from the publisher
+ 
+in a 6th terminal run
+```
+rosrun ros_hello_machinekit machinekit_subscriber.py
+```
+
+- observe in the 2nd terminal that the component and pin used for receiving data are made
+- observe that the data from the publisher is put in the `rossub-outside-HAL.value-out` value.
