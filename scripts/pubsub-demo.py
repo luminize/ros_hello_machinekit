@@ -2,9 +2,10 @@
 from machinekit import hal
 
 import rospy
-from turtlesim.msg import Pose
+#from turtlesim.msg import Pose
 #from geometry_msgs.msg import Twist
-from trajectory_msgs.msg import JointTrajectoryPoint
+#from trajectory_msgs.msg import JointTrajectoryPoint
+from sensor_msgs.msg import JointState
 
 # maps msg types to HAL types
 typemap = {
@@ -38,21 +39,27 @@ def gen_halcomp(cname, prefix, msgtype, dir, count):
   for i in range(len(msg.__slots__)):
     fname = msg.__slots__[i]
     ftype = msg._slot_types[i]
-
+    pinlist = list()
     if ftype in arraytypes:
-      pinlist = list()
+
       for i in range(count):
-        pname = "%s.%s.%d" % (prefix, fname,i)
+        pname = "%s.%s.%d" % (prefix, fname, i)
         pinlist.append(c.newpin(pname, typemap[arraytypes[ftype]], dir))
       pins[fname] = pinlist
       continue
 
     if not ftype in typemap:
-      raise Exception,"type %s not supported" % ftype
-    pname = "%s.%s" % (prefix, fname)
-    pins[fname] = c.newpin(pname, typemap[ftype], dir)
+      #raise Exception,"type %s not supported" % ftype
+      #type needs to be ignored, or the message must consist of only
+      #those types that can be accepted
+      print("ignoring type: %s") % (ftype)
+      pins[fname] = None
+    else:
+      pname = "%s.%s" % (prefix, fname)
+      pins[fname] = c.newpin(pname, typemap[ftype], dir)
 
   c.ready()
+  #print(pins)
   return pins
 
 def talker(pins, cname, topic, msgtype, rate):
@@ -76,16 +83,30 @@ def talker(pins, cname, topic, msgtype, rate):
 
 def demo_callback(msg, pins):
   # rospy.loginfo(rospy.get_caller_id()+ "\nI heard %s", msg )
-  for field, obj in pins.iteritems():
-    if type(obj) is list:
-      values = msg.__getattribute__(field)
-      for pin in obj:
-        pin.set(values.pop())
-    else:
-      obj.set(msg.__getattribute__(field))
+  print("-------------------msg:")
+  print(msg)
+  print("-------------------this demo_callback is broken")
+  for i, (field, obj) in enumerate(pins.iteritems()):
+    #output type and field for debug
+    print("i: %s type: %s value: %s") % (i, obj, field)
+    if obj is not None:
+        values = msg.__getattribute__(field)
+        print("[1] --> values:")
+        print(values)
+        if type(obj) is list:
+          values = msg.__getattribute__(field)
+          print("values:")
+          print(values)
+          for pin in obj:
+            print(pin)
+            pin.set(values.pop())
+        else:
+          values = msg.__getattribute__(field)
+          print("[2] --> values:")
+          print(values)
+          obj.set(msg.__getattribute__(field))
 
-
-def demo_subscriber(compname, prefix, topic, count=3):
+def demo_subscriber(compname, prefix, topic, count=6):
   '''
   retrieve msg type of <topic>
   subscribe to <topic>
@@ -107,8 +128,12 @@ def demo_publisher(compname, prefix, msgtype, count=3):
 
 if __name__ == '__main__':
 
-  demo_publisher('test', 'jtp', JointTrajectoryPoint, count=3)
+#  demo_publisher('test', 'jtp', JointTrajectoryPoint, count=3)
 
   # mirrors the turtlesim demo pose as HAL pins:
-  #demo_subscriber("turtle1", "pose", "/turtle1/pose")
-
+#  demo_subscriber("trajectory_msgs",
+#                "JointTrajectoryPoint",
+#                "/trajectory_msgs/JointTrajectoryPoint")
+  demo_subscriber("joint_states",
+                "robot",
+                "/joint_states")
