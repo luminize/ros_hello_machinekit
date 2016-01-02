@@ -27,6 +27,7 @@ arraytypes = {
 
 # make hal component a global
 c = None
+pins = None
 
 def get_topic_type(topic_name):
   import rostopic
@@ -35,6 +36,7 @@ def get_topic_type(topic_name):
 
 def gen_halcomp(cname, prefix, msgtype, dir, count):
   ''' define a HAL component whose pins match msg field names and types '''
+  global c
   c = hal.Component(cname)
   msg = msgtype()
   pins = dict()
@@ -46,6 +48,8 @@ def gen_halcomp(cname, prefix, msgtype, dir, count):
 
       for i in range(count):
         pname = "%s.%s.%d" % (prefix, fname, i)
+        #c.newpin(pname, typemap[arraytypes[ftype]], dir)
+        #pinlist.append(cname+"."+pname)
         pinlist.append(c.newpin(pname, typemap[arraytypes[ftype]], dir))
       pins[fname] = pinlist
       continue
@@ -102,9 +106,14 @@ def demo_callback(msg, pins):
               values = msg.__getattribute__(field)
               print("values:")
               print(values)
+              print(c)
               for pin in obj:
                 print(pin)
+                #for j in pin.iteritems():
+                #    print(pin[j])
                 pin.set(values.pop())
+                #print(c.pin)
+                #c.pin.Set(pin,value[pin])
             else:
               values = msg.__getattribute__(field)
               print("[2] --> values:")
@@ -118,6 +127,7 @@ def demo_subscriber(compname, prefix, topic, count=6):
   create pins <compname>.<prefix>.fieldname of appropriate type
   update pin values accordingly
   '''
+  global pins
   msgtype = get_topic_type(topic)
   pins = gen_halcomp(compname, prefix, msgtype, hal.HAL_OUT, count)
   rospy.init_node(compname, anonymous=True)
