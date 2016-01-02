@@ -25,6 +25,8 @@ arraytypes = {
     'uint32[]' :  'uint32'
 }
 
+# make hal component a global
+c = None
 
 def get_topic_type(topic_name):
   import rostopic
@@ -91,20 +93,23 @@ def demo_callback(msg, pins):
     print("i: %s type: %s value: %s") % (i, obj, field)
     if obj is not None:
         values = msg.__getattribute__(field)
-        print("[1] --> values:")
-        print(values)
-        if type(obj) is list:
-          values = msg.__getattribute__(field)
-          print("values:")
-          print(values)
-          for pin in obj:
-            print(pin)
-            pin.set(values.pop())
-        else:
-          values = msg.__getattribute__(field)
-          print("[2] --> values:")
-          print(values)
-          obj.set(msg.__getattribute__(field))
+        print(not values)
+        # check for non-empty value of message attribute
+        if values:
+            print("[1] --> values:")
+            print(values)
+            if type(obj) is list:
+              values = msg.__getattribute__(field)
+              print("values:")
+              print(values)
+              for pin in obj:
+                print(pin)
+                pin.set(values.pop())
+            else:
+              values = msg.__getattribute__(field)
+              print("[2] --> values:")
+              print(values)
+              obj.set(msg.__getattribute__(field))
 
 def demo_subscriber(compname, prefix, topic, count=6):
   '''
