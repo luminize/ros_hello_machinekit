@@ -25,9 +25,6 @@ arraytypes = {
     'uint32[]' :  'uint32'
 }
 
-# make hal component a global
-c = None
-pins = None
 
 def get_topic_type(topic_name):
   import rostopic
@@ -48,8 +45,6 @@ def gen_halcomp(cname, prefix, msgtype, dir, count):
 
       for i in range(count):
         pname = "%s.%s.%d" % (prefix, fname, i)
-        #c.newpin(pname, typemap[arraytypes[ftype]], dir)
-        #pinlist.append(cname+"."+pname)
         pinlist.append(c.newpin(pname, typemap[arraytypes[ftype]], dir))
       pins[fname] = pinlist
       continue
@@ -92,33 +87,28 @@ def demo_callback(msg, pins):
   print("-------------------msg:")
   print(msg)
   print("-------------------this demo_callback is broken")
-  for i, (field, obj) in enumerate(pins.iteritems()):
+  for item, (field, obj) in enumerate(pins.iteritems()):
     #output type and field for debug
-    print("i: %s type: %s value: %s") % (i, obj, field)
+    print("item: %s type: %s value: %s") % (item, obj, field)
     if obj is not None:
         values = msg.__getattribute__(field)
-        print(not values)
-        # check for non-empty value of message attribute
-        if values:
-            print("[1] --> values:")
-            print(values)
-            if type(obj) is list:
-              values = msg.__getattribute__(field)
-              print("values:")
-              print(values)
-              print(c)
-              for pin in obj:
-                print(pin)
-                #for j in pin.iteritems():
-                #    print(pin[j])
-                pin.set(values.pop())
-                #print(c.pin)
-                #c.pin.Set(pin,value[pin])
-            else:
-              values = msg.__getattribute__(field)
-              print("[2] --> values:")
-              print(values)
-              obj.set(msg.__getattribute__(field))
+        print("[1] --> values:")
+        print(values)
+        if type(obj) is list:
+          values = msg.__getattribute__(field)
+          print("values:")
+          print(values)
+          values = msg.__getattribute__(field)
+          print(c)
+          if values:
+              for j in range(len(obj)):
+                  print(values[j])
+                  obj[j].set(values[j])
+        else:
+          values = msg.__getattribute__(field)
+          print("[2] --> values:")
+          print(values)
+          obj.set(msg.__getattribute__(field))
 
 def demo_subscriber(compname, prefix, topic, count=6):
   '''
