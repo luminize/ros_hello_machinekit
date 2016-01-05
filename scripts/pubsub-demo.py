@@ -25,6 +25,7 @@ arraytypes = {
     'uint32[]' :  'uint32'
 }
 
+c = None
 
 def get_topic_type(topic_name):
   import rostopic
@@ -120,6 +121,13 @@ def demo_subscriber(compname, prefix, topic, count=6):
   global pins
   msgtype = get_topic_type(topic)
   pins = gen_halcomp(compname, prefix, msgtype, hal.HAL_OUT, count)
+  # create signal from joint_states.robot.position.0 to hm2_5i20.0.stepgen.00.position-cmd
+  # net joint0 joint_states.robot.position.0 hm2_5i20.0.stepgen.00.position-cmd
+  for i in range(0, 2):
+      sig_joint = hal.newsig('sig-joint%s' % i, hal.HAL_FLOAT)
+      sig_joint.link('joint_states.robot.position.%s' % i)
+      sig_joint.link('hm2_5i20.0.stepgen.0%s.position-cmd' % i)
+
   rospy.init_node(compname, anonymous=True)
   rospy.Subscriber(topic, msgtype, callback=demo_callback, callback_args=pins)
   rospy.spin()
