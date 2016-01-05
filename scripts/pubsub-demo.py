@@ -2,9 +2,6 @@
 from machinekit import hal
 
 import rospy
-#from turtlesim.msg import Pose
-#from geometry_msgs.msg import Twist
-#from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 
 # maps msg types to HAL types
@@ -51,9 +48,6 @@ def gen_halcomp(cname, prefix, msgtype, dir, count):
       continue
 
     if not ftype in typemap:
-      #raise Exception,"type %s not supported" % ftype
-      #type needs to be ignored, or the message must consist of only
-      #those types that can be accepted
       print("ignoring type: %s") % (ftype)
       pins[fname] = None
     else:
@@ -61,7 +55,6 @@ def gen_halcomp(cname, prefix, msgtype, dir, count):
       pins[fname] = c.newpin(pname, typemap[ftype], dir)
 
   c.ready()
-  #print(pins)
   return pins
 
 def talker(pins, cname, topic, msgtype, rate):
@@ -84,21 +77,11 @@ def talker(pins, cname, topic, msgtype, rate):
 
 
 def demo_callback(msg, pins):
-  # rospy.loginfo(rospy.get_caller_id()+ "\nI heard %s", msg )
-  print("-------------------msg:")
-  print(msg)
-  print("-------------------this demo_callback is broken")
   for item, (field, obj) in enumerate(pins.iteritems()):
     #output type and field for debug
     print("item: %s type: %s value: %s") % (item, obj, field)
     if obj is not None:
-        values = msg.__getattribute__(field)
-        print("[1] --> values:")
-        print(values)
         if type(obj) is list:
-          values = msg.__getattribute__(field)
-          print("values:")
-          print(values)
           values = msg.__getattribute__(field)
           print(c)
           if values:
@@ -107,8 +90,6 @@ def demo_callback(msg, pins):
                   obj[j].set(values[j])
         else:
           values = msg.__getattribute__(field)
-          print("[2] --> values:")
-          print(values)
           obj.set(msg.__getattribute__(field))
 
 def demo_subscriber(compname, prefix, topic, count=6):
@@ -143,10 +124,6 @@ if __name__ == '__main__':
 
 #  demo_publisher('test', 'jtp', JointTrajectoryPoint, count=3)
 
-  # mirrors the turtlesim demo pose as HAL pins:
-#  demo_subscriber("trajectory_msgs",
-#                "JointTrajectoryPoint",
-#                "/trajectory_msgs/JointTrajectoryPoint")
   demo_subscriber("joint_states",
                 "robot",
                 "/joint_states")
