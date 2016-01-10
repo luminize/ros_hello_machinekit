@@ -1,61 +1,66 @@
 == Instructions
 
-=== prerequisits
+These instructions shoe how to get joint positions into HAL. Example video:
+link:https://youtu.be/b4O2KU2bLWE[machinekit driven by ros joint states 2016 01 10 15 20 ]
+
+=== Prerequisits
 
 Installation of:
 
-* Wheezy
-* ROS_comm (http://wiki.ros.org/indigo/Installation/Debian)
-* Machinekit
+* ROS
+* Machinekit development setup
+* https://github.com/cdsteinkuehler/ros_hal_tests
+* a ROS publisher `/joint_path_command` to which the `listener` node from
+  `ros_hal_tests` can subscribe to
 
-see also link:https://github.com/machinekit/machinekit/issues/689#issuecomment-164146410[this comment]
+* depending on the hardware you will need to use
+  link:https://github.com/luminize/machinekit/tree/hostmot-remove-params2[this machinekit branch (no support !!!)]
+  which uses pins instead of params for the mesa hardware stepgen. BEWARE only
+  tested on a mesa 5i20 card. YMMV
+
 
 === Usage
 
-in a 1st terminal run
+==== 1
+install the component from link:https://github.com/cdsteinkuehler/ros_hal_tests[ros_hal_tests]
+with the command `comp --install joint_stream.comp`
+
+==== 2
+Start HAL in a new terminal with `halrun`. A running HAL is needed for
+../scripts/halfile.py to set up a configuration from python with the
+Machinekit Cython bindings.
+
 ```
-halrun -I ~/ros_catkin_ws/src/ros_hello_machinekit/halfile.hal
+bas@xw6600:~$ halrun
+msgd:0 stopped
+rtapi:0 stopped
+halcmd:
 ```
-in a 2nd terminal run which can be used for viewing the publisher and subscriber making HAL pins
+now type `start` in terminal to start the RT threads (of which there are none ATM)
+
+==== 3
+load the HAL configuration
 ```
-watch -n 0.2 "halcmd show pin"
+cd {wherever it's located}/ros_hello_machinekit/scripts
+python halfile.py
 ```
 
-in a 3nd terminal run
-```
-roscore
-```
+==== 4
+start whatever ROS robot you are running as long as there is a `/joint_path_command`
+topic to attach to
 
-in a 4nd terminal run
-```
-rosrun ros_hello_machinekit hello_world_publisher.py
-```
+==== 5
+`rosrun listener listener.py` will listen to messages of type `JointTrajectory`
+and put those into the ringbuffer link:https://github.com/luminize/ros_hello_machinekit/blob/master/scripts/halfile.py#L24[jointpos]
+where the joint_stream component attaches to this ringbuffer
+link:https://github.com/luminize/ros_hello_machinekit/blob/master/scripts/halfile.py#L26[here]
 
-in a 5rd terminal run
+==== 6
+optional, get the joint position in halscope (if you don't have hardware)
 ```
-rosrun ros_hello_machinekit hello_world_subscriber.py
+halscope -i ros.halscope &
 ```
+select `joint_stream.joint.00.pos-cmd` for the first channel
+set `Run Mode` to `Roll` and move your joints.
 
-return to the first terminal
-```
-show comp
-show pin
-```
-
-you'll notice the subscriber has the value of `0`. Thaty's because the pin `rospub-inside-HAL.value-in` is still `0`
-
-type:
-```
-net cosine siggen.0.cosine rospub-inside-HAL.value-in
-```
-
-- observe in terminal 4 that the publisher now gets the values of the `siggen.0.cosine` pin from `siggen`
-- observe in terminal 5 that the subscriber gets the value from the publisher
- 
-in a 6th terminal run
-```
-rosrun ros_hello_machinekit machinekit_subscriber.py
-```
-
-- observe in the 2nd terminal that the component and pin used for receiving data are made
-- observe that the data from the publisher is put in the `rossub-outside-HAL.value-out` value.
+image::./halscope.png[]
