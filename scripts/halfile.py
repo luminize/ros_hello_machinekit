@@ -1,7 +1,32 @@
 import os
+import sys
 from machinekit import hal
 from machinekit import rtapi as rt
 
+hardwarelist = {
+    'mesa-5i20' : 'mesanet 5i20 anything IO FPGA card',
+    'bbb-cramps' : 'BeagleBone Black (PRU) with CRAMPS cape'
+}
+
+if len(sys.argv) == 2:
+    # get the hardware type from the command line
+    hardware = str(sys.argv[1])
+else:
+    print("usage: %s <hardware>" % sys.argv[0])
+    exit(1)
+
+if not hardware in hardwarelist:
+    print("USAGE: %s <hardware>" % sys.argv[0])
+    print("Argument \"%s\" is not in hardware list") % hardware
+    print("")
+    print "{:<15} {:<20}".format('Argument','Description')
+    print("----------------------------------------------")
+    for argument, description in hardwarelist.iteritems():
+        print "{:<15} {:<20}".format(argument, description)
+    exit(1)
+else:
+    print("Debug: %s, %s") % (hardware, hardwarelist[hardware])
+    exit(1)
 
 # try to connect to HAL
 rt.init_RTAPI()
@@ -27,6 +52,7 @@ rt.loadrt("joint_stream","ring=jointpos")
 
 # create servo_thread
 servothread = "servo_thread"
+
 card = "hm2_5i20.0"
 rt.newthread('%s' % servothread, 1000000, fp=True)
 
