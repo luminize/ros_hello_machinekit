@@ -6,7 +6,8 @@ from machinekit import config as c
 
 hardwarelist = {
     'mesa-5i20' : ['mesanet 5i20 anything IO FPGA card','hm2_5i20.0'],
-    'bbb-cramps' : ['BeagleBone Black (PRU) with CRAMPS cape', 'hpg']
+    'bbb-cramps' : ['BeagleBone Black (PRU) with CRAMPS cape', 'hpg'],
+    'bbb-bebopr++' : ['BeagleBone Black (PRU) with BeBoPr++ cape', 'hpg']
 }
 
 if len(sys.argv) == 2:
@@ -41,6 +42,7 @@ if hardware == 'mesa-5i20':
     rt.loadrt('hm2_pci', config="firmware=hm2/5i20/SVST8_4.BIT \
                                 num_pwmgens=3 \
                                 num_stepgens=4")
+
 if hardware == 'bbb-cramps':
     os.system('./setup.sh')
     rt.loadrt('hal_bb_gpio',
@@ -48,11 +50,22 @@ if hardware == 'bbb-cramps':
               input_pins='807,808,809,810,817,911,913')
     prubin = '%s/%s' % (c.Config().EMC2_RTLIB_DIR, 'xenomai/pru_generic.bin')
     rt.loadrt('hal_pru_generic',
-              pru=0, num_stepgens=4,
+              pru=0, num_stepgens=5,
               num_pwmgens=0,
               prucode=prubin,
               halname=card)
 
+if hardware == 'bbb-bebopr++':
+    os.system('./setup.bridge.sh')
+    rt.loadrt('hal_bb_gpio',
+              output_pins='807,924,926',
+              input_pins='808,809,810,814,817,818')
+    prubin = '%s/%s' % (c.Config().EMC2_RTLIB_DIR, 'xenomai/pru_generic.bin')
+    rt.loadrt('hal_pru_generic',
+              pru=0, num_stepgens=5,
+              num_pwmgens=0,
+              prucode=prubin,
+              halname=card)
 
 rt.loadrt('siggen')
 #rt.newinst("siggen","siggen_0")
@@ -82,7 +95,7 @@ if hardware == 'mesa-5i20':
     hal.addf('%s.write' % card, servothread)
     hal.addf('%s.pet_watchdog' % card, servothread)
     
-if hardware == 'bbb-cramps':
+if ((hardware == 'bbb-cramps') or (hardware == 'bbb-bebopr++')) :
     hal.addf('%s.capture-position' % card, servothread)
     hal.addf('bb_gpio.read', servothread)
     hal.addf('siggen.0.update', servothread)
@@ -112,7 +125,7 @@ for i in range(0, 4):
     hal.Pin('%s.stepgen.0%s.maxaccel' % (card, i)).set(STEPGEN_MAX_ACC)
     
     # hpg doesn't have this pin
-    if not hardware == 'bbb-cramps':
+    if not ((hardware == 'bbb-cramps') or (hardware == 'bbb-bebopr++')) :
         hal.Pin('%s.stepgen.0%s.step_type' % (card, i)).set(0)
 
     signal = hal.newsig('emcmot.0%s.enable' % i, hal.HAL_BIT)
@@ -134,9 +147,32 @@ if hardware == 'bbb-cramps':
     hal.Pin('%s.stepgen.02.steppin' % card).set(819)
     hal.Pin('%s.stepgen.02.dirpin' % card).set(818)
     hal.Pin('%s.stepgen.03.steppin' % card).set(916)
-    hal.Pin('%s.stepgen.03.dirpin' % card).set(911)
-    # Machine power
+    hal.Pin('%s.stepgen.03.dirpin' % card).set(912)
+    hal.Pin('%s.stepgen.04.steppin' % card).set(917)
+    hal.Pin('%s.stepgen.04.dirpin' % card).set(918)
+    # Machine power (enale stepper drivers)
     hal.net('emcmot.00.enable', 'bb_gpio.p9.out-23')
+    # Tie machine power signal to the CRAMPS LED
+    hal.net('emcmot.00.enable', 'bb_gpio.p9.out-25')
+    # set some better steps for video
+    for i in range(0, 4):
+        hal.Pin('%s.stepgen.0%s.position-scale' % (card, i)).set(4000)
+
+if hardware == 'bbb-bebopr++':
+    hal.Pin('%s.stepgen.00.steppin' % card).set(812)
+    hal.Pin('%s.stepgen.00.dirpin' % card).set(811)
+    hal.Pin('%s.stepgen.01.steppin' % card).set(816)
+    hal.Pin('%s.stepgen.01.dirpin' % card).set(815)
+    hal.Pin('%s.stepgen.02.steppin' % card).set(915)
+    hal.Pin('%s.stepgen.02.dirpin' % card).set(923)
+    hal.Pin('%s.stepgen.03.steppin' % card).set(922)
+    hal.Pin('%s.stepgen.03.dirpin' % card).set(921)
+    hal.Pin('%s.stepgen.04.steppin' % card).set(918)
+    hal.Pin('%s.stepgen.04.dirpin' % card).set(917)
+    # Machine power (enable stepper drivers)
+    #
+    # TODO
+    #
     # Tie machine power signal to the CRAMPS LED
     hal.net('emcmot.00.enable', 'bb_gpio.p9.out-25')
     # set some better steps for video
